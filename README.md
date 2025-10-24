@@ -5,6 +5,7 @@ This library provides support for exporting metrics to Google Cloud Monitoring.
 For resource detection see [opentelemetry-resourcedetector-gcp-rust](https://github.com/Sergo007/opentelemetry-resourcedetector-gcp-rust).
 
 # Support OpenTelemetry SDK versions
+`opentelemetry_sdk:0.31      | opentelemetry_gcloud_monitoring_exporter:0.19  `\
 `opentelemetry_sdk:0.30      | opentelemetry_gcloud_monitoring_exporter:0.18  `\
 `opentelemetry_sdk:0.29      | opentelemetry_gcloud_monitoring_exporter:0.16  `\
 `opentelemetry_sdk:0.28      | opentelemetry_gcloud_monitoring_exporter:0.15  `\
@@ -24,13 +25,13 @@ opentelemetry_gcloud_monitoring_exporter = { path = "../..", features = [
     "gcp_auth",
 ] }
 tokio = { version = "1.0", features = ["full"] }
-opentelemetry = { version = "0.30", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.30", features = [
+opentelemetry = { version = "0.31", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.31", features = [
     "metrics",
     "rt-tokio",
     "experimental_metrics_periodicreader_with_async_runtime",
 ] }
-opentelemetry_resourcedetector_gcp_rust = "0.18.0"
+opentelemetry_resourcedetector_gcp_rust = "0.19.0"
 ```
 
 # Usage

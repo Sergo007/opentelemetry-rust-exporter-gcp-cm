@@ -3,7 +3,7 @@ members = ["examples/*"]
 
 [package]
 name = "opentelemetry_gcloud_monitoring_exporter"
-version = "0.18.0"
+version = "0.19.0"
 description = "Provides support for exporting metrics to Google Cloud Monitoring."
 readme = "README.md"
 keywords = ["opentelemetry", "metrics", "exporter", "gcp", "cloud-monitoring"]
@@ -22,14 +22,14 @@ gcp_auth = ["dep:gcp_auth"]
 tokio = ["dep:tokio", "opentelemetry_sdk/rt-tokio"]
 
 [dependencies]
-opentelemetry = { version = "0.30", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.30", features = [
+opentelemetry = { version = "0.31", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.31", features = [
     "metrics",
     "spec_unstable_metrics_views",
     "experimental_metrics_periodicreader_with_async_runtime",
 ] }
 
-opentelemetry_resourcedetector_gcp_rust = { version = "0.18" }
+opentelemetry_resourcedetector_gcp_rust = { version = "0.19" }
 
 async-trait = "0.1"
 

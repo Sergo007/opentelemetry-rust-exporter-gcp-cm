@@ -12,13 +12,13 @@ opentelemetry_gcloud_monitoring_exporter = { path = "../..", features = [
     "gcp_auth",
 ] }
 tokio = { version = "1.0", features = ["full"] }
-opentelemetry = { version = "0.30", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.30", features = [
+opentelemetry = { version = "0.31", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.31", features = [
     "metrics",
     "rt-tokio",
     "experimental_metrics_periodicreader_with_async_runtime",
 ] }
-opentelemetry_resourcedetector_gcp_rust = "0.18.0"
+opentelemetry_resourcedetector_gcp_rust = "0.19.0"
 # json serializer/deserializer
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

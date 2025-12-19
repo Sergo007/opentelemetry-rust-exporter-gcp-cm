@@ -25,10 +25,7 @@ pub fn sum_convert_f64<T: ToF64 + Copy>(
             start_time: if (descriptor.metric_kind == MetricKind::Cumulative as i32)
                 || (descriptor.metric_kind == MetricKind::Delta as i32)
             {
-                let data_point_start_time = start_time
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos();
+                let data_point_start_time = start_time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
                 Some(gcloud_sdk::prost_types::Timestamp {
                     seconds: (data_point_start_time / 1_000_000_000) as i64,
                     nanos: (data_point_start_time % 1_000_000_000) as i32,
@@ -37,10 +34,7 @@ pub fn sum_convert_f64<T: ToF64 + Copy>(
                 None
             },
             end_time: {
-                let data_point_time = time
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos();
+                let data_point_time = time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
                 Some(gcloud_sdk::prost_types::Timestamp {
                     seconds: (data_point_time / 1_000_000_000) as i64,
                     nanos: (data_point_time % 1_000_000_000) as i32,
@@ -48,11 +42,9 @@ pub fn sum_convert_f64<T: ToF64 + Copy>(
             },
         }),
         value: Some(gcloud_sdk::google::monitoring::v3::TypedValue {
-            value: Some(
-                gcloud_sdk::google::monitoring::v3::typed_value::Value::DoubleValue(
-                    data_point.value().to_f64(),
-                ),
-            ),
+            value: Some(gcloud_sdk::google::monitoring::v3::typed_value::Value::DoubleValue(
+                data_point.value().to_f64(),
+            )),
         }),
     };
 
@@ -93,10 +85,7 @@ pub fn sum_convert_i64<T: ToI64 + Copy>(
             start_time: if (descriptor.metric_kind == MetricKind::Cumulative as i32)
                 || (descriptor.metric_kind == MetricKind::Delta as i32)
             {
-                let data_point_start_time = start_time
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos();
+                let data_point_start_time = start_time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
                 Some(gcloud_sdk::prost_types::Timestamp {
                     seconds: (data_point_start_time / 1_000_000_000) as i64,
                     nanos: (data_point_start_time % 1_000_000_000) as i32,
@@ -105,10 +94,7 @@ pub fn sum_convert_i64<T: ToI64 + Copy>(
                 None
             },
             end_time: {
-                let data_point_time = time
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos();
+                let data_point_time = time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
                 Some(gcloud_sdk::prost_types::Timestamp {
                     seconds: (data_point_time / 1_000_000_000) as i64,
                     nanos: (data_point_time % 1_000_000_000) as i32,
@@ -116,11 +102,9 @@ pub fn sum_convert_i64<T: ToI64 + Copy>(
             },
         }),
         value: Some(gcloud_sdk::google::monitoring::v3::TypedValue {
-            value: Some(
-                gcloud_sdk::google::monitoring::v3::typed_value::Value::Int64Value(
-                    data_point.value().to_i64(),
-                ),
-            ),
+            value: Some(gcloud_sdk::google::monitoring::v3::typed_value::Value::Int64Value(
+                data_point.value().to_i64(),
+            )),
         }),
     };
 
@@ -162,8 +146,7 @@ pub fn gauge_convert_f64<T: ToF64 + Copy>(
                 || (descriptor.metric_kind == MetricKind::Delta as i32)
             {
                 start_time.map(|v| {
-                    let data_point_start_time =
-                        v.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
+                    let data_point_start_time = v.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
                     gcloud_sdk::prost_types::Timestamp {
                         seconds: (data_point_start_time / 1_000_000_000) as i64,
                         nanos: (data_point_start_time % 1_000_000_000) as i32,
@@ -173,10 +156,7 @@ pub fn gauge_convert_f64<T: ToF64 + Copy>(
                 None
             },
             end_time: {
-                let data_point_time = time
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos();
+                let data_point_time = time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
                 Some(gcloud_sdk::prost_types::Timestamp {
                     seconds: (data_point_time / 1_000_000_000) as i64,
                     nanos: (data_point_time % 1_000_000_000) as i32,
@@ -184,11 +164,9 @@ pub fn gauge_convert_f64<T: ToF64 + Copy>(
             },
         }),
         value: Some(gcloud_sdk::google::monitoring::v3::TypedValue {
-            value: Some(
-                gcloud_sdk::google::monitoring::v3::typed_value::Value::DoubleValue(
-                    data_point.value().to_f64(),
-                ),
-            ),
+            value: Some(gcloud_sdk::google::monitoring::v3::typed_value::Value::DoubleValue(
+                data_point.value().to_f64(),
+            )),
         }),
     };
 
@@ -230,8 +208,7 @@ pub fn gauge_convert_i64<T: ToI64 + Copy>(
                 || (descriptor.metric_kind == MetricKind::Delta as i32)
             {
                 start_time.map(|v| {
-                    let data_point_start_time =
-                        v.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
+                    let data_point_start_time = v.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
                     gcloud_sdk::prost_types::Timestamp {
                         seconds: (data_point_start_time / 1_000_000_000) as i64,
                         nanos: (data_point_start_time % 1_000_000_000) as i32,
@@ -241,10 +218,7 @@ pub fn gauge_convert_i64<T: ToI64 + Copy>(
                 None
             },
             end_time: {
-                let data_point_time = time
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos();
+                let data_point_time = time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
                 Some(gcloud_sdk::prost_types::Timestamp {
                     seconds: (data_point_time / 1_000_000_000) as i64,
                     nanos: (data_point_time % 1_000_000_000) as i32,
@@ -252,11 +226,9 @@ pub fn gauge_convert_i64<T: ToI64 + Copy>(
             },
         }),
         value: Some(gcloud_sdk::google::monitoring::v3::TypedValue {
-            value: Some(
-                gcloud_sdk::google::monitoring::v3::typed_value::Value::Int64Value(
-                    data_point.value().to_i64(),
-                ),
-            ),
+            value: Some(gcloud_sdk::google::monitoring::v3::typed_value::Value::Int64Value(
+                data_point.value().to_i64(),
+            )),
         }),
     };
 

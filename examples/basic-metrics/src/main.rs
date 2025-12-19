@@ -33,10 +33,9 @@ async fn init_metrics() -> Result<SdkMeterProvider, Box<dyn std::error::Error>> 
     );
     let exporter = GCPMetricsExporter::new_gcp_auth(cfg).await?;
     // https://github.com/open-telemetry/opentelemetry-rust/blob/main/opentelemetry-sdk/CHANGELOG.md#0280
-    let reader =
-        periodic_reader_with_async_runtime::PeriodicReader::builder(exporter, runtime::Tokio)
-            .with_interval(Duration::from_secs(15))
-            .build();
+    let reader = periodic_reader_with_async_runtime::PeriodicReader::builder(exporter, runtime::Tokio)
+        .with_interval(Duration::from_secs(15))
+        .build();
     // let reader = PeriodicReader::builder(exporter).build();
     let gcp_detector = Box::new(GoogleCloudResourceDetector::new().await);
     // https://cloud.google.com/monitoring/api/resources#tag_global
@@ -74,12 +73,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build();
 
     // Create an UpDownCounter Instrument.
-    let updown_counter = meter
-        .i64_up_down_counter("up_down_counter_i64_test")
-        .build();
-    let updown_counter2 = meter
-        .f64_up_down_counter("up_down_counter_f64_test")
-        .build();
+    let updown_counter = meter.i64_up_down_counter("up_down_counter_i64_test").build();
+    let updown_counter2 = meter.f64_up_down_counter("up_down_counter_f64_test").build();
 
     // Create a Histogram Instrument.
     let histogram = meter
@@ -199,51 +194,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Record measurements using the Counter instrument.
         counter.add(
             1.0,
-            &[
-                KeyValue::new("mykey1", "myvalue1"),
-                KeyValue::new("mykey2", "myvalue2"),
-            ],
+            &[KeyValue::new("mykey1", "myvalue1"), KeyValue::new("mykey2", "myvalue2")],
         );
 
         counter2.add(
             1,
-            &[
-                KeyValue::new("mykey1", "myvalue1"),
-                KeyValue::new("mykey2", "myvalue2"),
-            ],
+            &[KeyValue::new("mykey1", "myvalue1"), KeyValue::new("mykey2", "myvalue2")],
         );
 
         // Record measurements using the UpCounter instrument.
         updown_counter.add(
             10,
-            &[
-                KeyValue::new("mykey1", "myvalue1"),
-                KeyValue::new("mykey2", "myvalue2"),
-            ],
+            &[KeyValue::new("mykey1", "myvalue1"), KeyValue::new("mykey2", "myvalue2")],
         );
 
         updown_counter2.add(
             10.0,
-            &[
-                KeyValue::new("mykey1", "myvalue1"),
-                KeyValue::new("mykey2", "myvalue2"),
-            ],
+            &[KeyValue::new("mykey1", "myvalue1"), KeyValue::new("mykey2", "myvalue2")],
         );
 
         // Record measurements using the histogram instrument.
         histogram.record(
             10.5,
-            &[
-                KeyValue::new("mykey1", "myvalue1"),
-                KeyValue::new("mykey2", "myvalue2"),
-            ],
+            &[KeyValue::new("mykey1", "myvalue1"), KeyValue::new("mykey2", "myvalue2")],
         );
         histogram2.record(
             10,
-            &[
-                KeyValue::new("mykey1", "myvalue1"),
-                KeyValue::new("mykey2", "myvalue2"),
-            ],
+            &[KeyValue::new("mykey1", "myvalue1"), KeyValue::new("mykey2", "myvalue2")],
         );
         // println!("recorded metrics");
         // Sleep for 0.1 second

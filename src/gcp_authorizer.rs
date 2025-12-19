@@ -1,21 +1,16 @@
 use crate::gcp_authorizer_error::GcpAuthorizerError;
 use async_trait::async_trait;
-use hyper::Uri;
+// use hyper::Uri;
 use std::time::Duration;
-use tonic::transport::Channel;
+use tonic::transport::{Channel, Uri};
 pub struct GoogleEnvironment;
 
 impl GoogleEnvironment {
-    pub async fn init_google_services_channel<S: AsRef<str>>(
-        api_url: S,
-    ) -> Result<Channel, crate::error::Error> {
+    pub async fn init_google_services_channel<S: AsRef<str>>(api_url: S) -> Result<Channel, crate::error::Error> {
         let api_url_string = api_url.as_ref().to_string();
         let uri = Uri::from_maybe_shared(api_url_string)?;
         if uri.authority().is_none() {
-            return Err(crate::error::ErrorKind::UrlErrorInvalidAuthority(
-                "domain is required".to_string(),
-            )
-            .into());
+            return Err(crate::error::ErrorKind::UrlErrorInvalidAuthority("domain is required".to_string()).into());
         }
         let domain_name = uri.authority().unwrap().host().to_string();
         let tls_config = Self::init_tls_config(domain_name);
@@ -44,10 +39,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_normalize_label_key() {
-        let _channel =
-            GoogleEnvironment::init_google_services_channel("https://monitoring.googleapis.com")
-                .await
-                .unwrap();
+        let _channel = GoogleEnvironment::init_google_services_channel("https://monitoring.googleapis.com")
+            .await
+            .unwrap();
     }
 }
 

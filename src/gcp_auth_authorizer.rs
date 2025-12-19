@@ -9,10 +9,7 @@ impl GcpAuth {
     pub async fn new() -> Result<Self, gcp_auth::Error> {
         let provider = gcp_auth::provider().await?;
         let project_id = provider.project_id().await?;
-        Ok(Self {
-            provider,
-            project_id,
-        })
+        Ok(Self { provider, project_id })
     }
 }
 #[async_trait]
@@ -23,9 +20,11 @@ impl Authorizer for GcpAuth {
 
     async fn token(&self) -> Result<String, GcpAuthorizerError> {
         let scopes = &["https://www.googleapis.com/auth/cloud-platform"];
-        let token = self.provider.token(scopes).await.map_err(|e| {
-            GcpAuthorizerError::new(format!("Failed to get token: {}", e.to_string()))
-        })?;
+        let token = self
+            .provider
+            .token(scopes)
+            .await
+            .map_err(|e| GcpAuthorizerError::new(format!("Failed to get token: {}", e.to_string())))?;
         Ok(token.as_str().to_string())
     }
 }

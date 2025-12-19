@@ -14,14 +14,8 @@ pub fn convert<T: ToF64 + Copy>(
     add_unique_identifier: bool,
     unique_identifier: &str,
 ) -> TimeSeries {
-    let data_point_start_time = start_time
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let data_point_time = time
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
+    let data_point_start_time = start_time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
+    let data_point_time = time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
     let point = gcloud_sdk::google::monitoring::v3::Point {
         interval: Some(gcloud_sdk::google::monitoring::v3::TimeInterval {
             start_time: Some(gcloud_sdk::prost_types::Timestamp {
@@ -34,25 +28,33 @@ pub fn convert<T: ToF64 + Copy>(
             }),
         }),
         value: Some(gcloud_sdk::google::monitoring::v3::TypedValue {
-            value: Some(gcloud_sdk::google::monitoring::v3::typed_value::Value::DistributionValue(gcloud_sdk::google::api::Distribution {
-                count: data_point.count() as i64,
-                mean: {
-                    if data_point.count() == 0 {
-                        0.0
-                    } else {
-                        data_point.sum().to_f64() / data_point.count() as f64
-                    }
-                },
-                sum_of_squared_deviation: 0.0,
-                bucket_options: Some(gcloud_sdk::google::api::distribution::BucketOptions {
-                    options: Some(gcloud_sdk::google::api::distribution::bucket_options::Options::ExplicitBuckets(gcloud_sdk::google::api::distribution::bucket_options::Explicit {
-                        bounds: data_point.bounds().collect::<Vec<f64>>(),
-                    })),
-                }),
-                range: None,
-                bucket_counts: data_point.bucket_counts().map(|v| v as i64).collect(),
-                exemplars: Default::default(),
-            })),
+            value: Some(
+                gcloud_sdk::google::monitoring::v3::typed_value::Value::DistributionValue(
+                    gcloud_sdk::google::api::Distribution {
+                        count: data_point.count() as i64,
+                        mean: {
+                            if data_point.count() == 0 {
+                                0.0
+                            } else {
+                                data_point.sum().to_f64() / data_point.count() as f64
+                            }
+                        },
+                        sum_of_squared_deviation: 0.0,
+                        bucket_options: Some(gcloud_sdk::google::api::distribution::BucketOptions {
+                            options: Some(
+                                gcloud_sdk::google::api::distribution::bucket_options::Options::ExplicitBuckets(
+                                    gcloud_sdk::google::api::distribution::bucket_options::Explicit {
+                                        bounds: data_point.bounds().collect::<Vec<f64>>(),
+                                    },
+                                ),
+                            ),
+                        }),
+                        range: None,
+                        bucket_counts: data_point.bucket_counts().map(|v| v as i64).collect(),
+                        exemplars: Default::default(),
+                    },
+                ),
+            ),
         }),
     };
 
@@ -61,10 +63,7 @@ pub fn convert<T: ToF64 + Copy>(
         .map(kv_map_normalize_k_v)
         .collect::<std::collections::HashMap<String, String>>();
     if add_unique_identifier {
-        labels.insert(
-            UNIQUE_IDENTIFIER_KEY.to_string(),
-            unique_identifier.to_string(),
-        );
+        labels.insert(UNIQUE_IDENTIFIER_KEY.to_string(), unique_identifier.to_string());
     }
 
     let time_series = TimeSeries {
@@ -110,37 +109,40 @@ pub fn convert_exponential<T: ToF64 + Copy>(
             }),
         }),
         value: Some(gcloud_sdk::google::monitoring::v3::TypedValue {
-            value: Some(gcloud_sdk::google::monitoring::v3::typed_value::Value::DistributionValue(gcloud_sdk::google::api::Distribution {
-                count: data_point.count as i64,
-                mean: {
-                    if data_point.count == 0 {
-                        0.0
-                    } else {
-                        data_point.sum.to_f64() / data_point.count as f64
-                    }
-                },
-                sum_of_squared_deviation: 0.0,
-                bucket_options: Some(gcloud_sdk::google::api::distribution::BucketOptions {
-                    options: Some(gcloud_sdk::google::api::distribution::bucket_options::Options::ExponentialBuckets(gcloud_sdk::google::api::distribution::bucket_options::Exponential {
-                        bounds: data_point.bounds.clone(),
-                    })),
-                }),
-                range: None,
-                bucket_counts: data_point.bucket_counts.iter().map(|v| *v as i64).collect(),
-                exemplars: Default::default(),
-            })),
+            value: Some(
+                gcloud_sdk::google::monitoring::v3::typed_value::Value::DistributionValue(
+                    gcloud_sdk::google::api::Distribution {
+                        count: data_point.count as i64,
+                        mean: {
+                            if data_point.count == 0 {
+                                0.0
+                            } else {
+                                data_point.sum.to_f64() / data_point.count as f64
+                            }
+                        },
+                        sum_of_squared_deviation: 0.0,
+                        bucket_options: Some(gcloud_sdk::google::api::distribution::BucketOptions {
+                            options: Some(
+                                gcloud_sdk::google::api::distribution::bucket_options::Options::ExponentialBuckets(
+                                    gcloud_sdk::google::api::distribution::bucket_options::Exponential {
+                                        bounds: data_point.bounds.clone(),
+                                    },
+                                ),
+                            ),
+                        }),
+                        range: None,
+                        bucket_counts: data_point.bucket_counts.iter().map(|v| *v as i64).collect(),
+                        exemplars: Default::default(),
+                    },
+                ),
+            ),
         }),
     };
 
     let labels = data_point
         .attributes
         .iter()
-        .map(|kv| {
-            (
-                normalize_label_key(&kv.key.to_string()),
-                kv.value.to_string(),
-            )
-        })
+        .map(|kv| (normalize_label_key(&kv.key.to_string()), kv.value.to_string()))
         .collect::<std::collections::HashMap<String, String>>();
     // if self.add_unique_identifier {
     //     labels.insert(UNIQUE_IDENTIFIER_KEY.to_string(), self.unique_identifier.clone());

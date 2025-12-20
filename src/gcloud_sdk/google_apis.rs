@@ -1,4 +1,6 @@
 pub mod google {
+    #![allow(dead_code, unused_imports, unused_variables, unexpected_cfgs)]
+
     pub mod api {
         include_proto!("google.api");
     }

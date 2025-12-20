@@ -1,5 +1,5 @@
 [workspace]
-members = ["examples/*"]
+members = ["examples/*", "gcloud-protos-generator"]
 
 [package]
 name = "opentelemetry_gcloud_monitoring_exporter"

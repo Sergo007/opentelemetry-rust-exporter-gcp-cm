@@ -117,11 +117,16 @@ Customize metric resource in google monitoring
 ```
 
 ## References
-
-[Cloud Monitoring](https://cloud.google.com/monitoring)
-
-[OpenTelemetry Project](https://opentelemetry.io/)
+- [Cloud Monitoring](https://cloud.google.com/monitoring)
+- [OpenTelemetry Project](https://opentelemetry.io/)
+- [googleapis](https://github.com/googleapis/googleapis)
 
 
 ## Test cases from this repo
 [opentelemetry-exporter-gcp-monitoring python version](https://github.com/GoogleCloudPlatform/opentelemetry-operations-python/tree/main/opentelemetry-exporter-gcp-monitoring)
+
+## rebuild gcloud_sdk
+- `cd gcloud-protos-generator/proto`
+- `git clone git@github.com:googleapis/googleapis.git`
+- `cd ../../`
+- `cargo run -p gcloud_sdk_gen`

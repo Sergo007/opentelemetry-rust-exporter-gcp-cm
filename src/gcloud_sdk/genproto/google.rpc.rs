@@ -6,8 +6,7 @@
 ///
 /// You can find out more about this error model and how to work with it in the
 /// [API Design Guide](<https://cloud.google.com/apis/design/errors>).
-#[derive(Debug, Clone, PartialEq, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Status {
     /// The status code, which should be an enum value of
     /// \[google.rpc.Code\]\[google.rpc.Code\].
@@ -30,7 +29,7 @@ pub struct Status {
 /// the most specific error code that applies.  For example, prefer
 /// `OUT_OF_RANGE` over `FAILED_PRECONDITION` if both codes apply.
 /// Similarly prefer `NOT_FOUND` or `ALREADY_EXISTS` over `FAILED_PRECONDITION`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum Code {
     /// Not an error; returned on success.
@@ -249,8 +248,7 @@ impl Code {
 ///    }
 /// }
 /// ```
-#[derive(Debug, Clone, PartialEq, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ErrorInfo {
     /// The reason of the error. This is a constant value that identifies the
     /// proximate cause of the error. Error reasons are unique within a particular
@@ -277,7 +275,10 @@ pub struct ErrorInfo {
     /// `{"instanceLimitPerRequest": "100"}`, if the client exceeds the number of
     /// instances that can be created in a single (batch) request.
     #[prost(map = "string, string", tag = "3")]
-    pub metadata: ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
+    pub metadata: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
 }
 /// Describes when the clients can retry a failed request. Clients could ignore
 /// the recommendation here or retry when this information is missing from error
@@ -292,16 +293,14 @@ pub struct ErrorInfo {
 /// the delay between retries based on `retry_delay`, until either a maximum
 /// number of retries have been reached or a maximum retry delay cap has been
 /// reached.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct RetryInfo {
     /// Clients should wait at least this long between retrying the same request.
     #[prost(message, optional, tag = "1")]
     pub retry_delay: ::core::option::Option<::prost_types::Duration>,
 }
 /// Describes additional debugging info.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct DebugInfo {
     /// The stack trace entries indicating where the error occurred.
     #[prost(string, repeated, tag = "1")]
@@ -321,8 +320,7 @@ pub struct DebugInfo {
 ///
 /// Also see RetryInfo and Help types for other details about handling a
 /// quota failure.
-#[derive(Debug, Clone, PartialEq, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QuotaFailure {
     /// Describes all quota violations.
     #[prost(message, repeated, tag = "1")]
@@ -332,8 +330,7 @@ pub struct QuotaFailure {
 pub mod quota_failure {
     /// A message type used to describe a single quota violation.  For example, a
     /// daily quota or a custom quota that was exceeded.
-    #[derive(Debug, Clone, PartialEq, ::prost::Message)]
-    #[prost(skip_debug)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct Violation {
         /// The subject on which the quota check failed.
         /// For example, "clientip:<ip address of client>" or "project:<Google
@@ -396,8 +393,10 @@ pub mod quota_failure {
         /// When a quota is enforced globally, the quota_dimensions would always be
         /// empty.
         #[prost(map = "string, string", tag = "6")]
-        pub quota_dimensions:
-            ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
+        pub quota_dimensions: ::std::collections::HashMap<
+            ::prost::alloc::string::String,
+            ::prost::alloc::string::String,
+        >,
         /// The enforced quota value at the time of the `QuotaFailure`.
         ///
         /// For example, if the enforced quota value at the time of the
@@ -422,8 +421,7 @@ pub mod quota_failure {
 /// For example, if an RPC failed because it required the Terms of Service to be
 /// acknowledged, it could list the terms of service violation in the
 /// PreconditionFailure message.
-#[derive(Debug, Clone, PartialEq, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreconditionFailure {
     /// Describes all precondition violations.
     #[prost(message, repeated, tag = "1")]
@@ -432,8 +430,7 @@ pub struct PreconditionFailure {
 /// Nested message and enum types in `PreconditionFailure`.
 pub mod precondition_failure {
     /// A message type used to describe a single precondition failure.
-    #[derive(Debug, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-    #[prost(skip_debug)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct Violation {
         /// The type of PreconditionFailure. We recommend using a service-specific
         /// enum type to define the supported precondition violation subjects. For
@@ -455,8 +452,7 @@ pub mod precondition_failure {
 }
 /// Describes violations in a client request. This error type focuses on the
 /// syntactic aspects of the request.
-#[derive(Debug, Clone, PartialEq, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BadRequest {
     /// Describes all violations in a client request.
     #[prost(message, repeated, tag = "1")]
@@ -465,8 +461,7 @@ pub struct BadRequest {
 /// Nested message and enum types in `BadRequest`.
 pub mod bad_request {
     /// A message type used to describe a single bad request field.
-    #[derive(Debug, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-    #[prost(skip_debug)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct FieldViolation {
         /// A path that leads to a field in the request body. The value will be a
         /// sequence of dot-separated identifiers that identify a protocol buffer
@@ -528,8 +523,7 @@ pub mod bad_request {
 }
 /// Contains metadata about the request that clients can attach when filing a bug
 /// or providing other forms of feedback.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct RequestInfo {
     /// An opaque string that should only be interpreted by the service generating
     /// it. For example, it can be used to identify requests in the service's logs.
@@ -541,8 +535,7 @@ pub struct RequestInfo {
     pub serving_data: ::prost::alloc::string::String,
 }
 /// Describes the resource that is being accessed.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ResourceInfo {
     /// A name for the type of resource being accessed, e.g. "sql table",
     /// "cloud storage bucket", "file", "Google calendar"; or the type URL
@@ -571,8 +564,7 @@ pub struct ResourceInfo {
 /// For example, if a quota check failed with an error indicating the calling
 /// project hasn't enabled the accessed service, this can contain a URL pointing
 /// directly to the right place in the developer console to flip the bit.
-#[derive(Debug, Clone, PartialEq, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Help {
     /// URL(s) pointing to additional information on handling the current error.
     #[prost(message, repeated, tag = "1")]
@@ -581,8 +573,7 @@ pub struct Help {
 /// Nested message and enum types in `Help`.
 pub mod help {
     /// Describes a URL link.
-    #[derive(Debug, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-    #[prost(skip_debug)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct Link {
         /// Describes what the link offers.
         #[prost(string, tag = "1")]
@@ -594,8 +585,7 @@ pub mod help {
 }
 /// Provides a localized error message that is safe to return to the user
 /// which can be attached to an RPC error.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct LocalizedMessage {
     /// The locale used following the specification defined at
     /// <https://www.rfc-editor.org/rfc/bcp/bcp47.txt.>
@@ -607,8 +597,7 @@ pub struct LocalizedMessage {
     pub message: ::prost::alloc::string::String,
 }
 /// Represents an HTTP request.
-#[derive(Debug, Clone, PartialEq, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct HttpRequest {
     /// The HTTP request method.
     #[prost(string, tag = "1")]
@@ -625,8 +614,7 @@ pub struct HttpRequest {
     pub body: ::prost::alloc::vec::Vec<u8>,
 }
 /// Represents an HTTP response.
-#[derive(Debug, Clone, PartialEq, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct HttpResponse {
     /// The HTTP status code, such as 200 or 404.
     #[prost(int32, tag = "1")]
@@ -643,8 +631,7 @@ pub struct HttpResponse {
     pub body: ::prost::alloc::vec::Vec<u8>,
 }
 /// Represents an HTTP header.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-#[prost(skip_debug)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct HttpHeader {
     /// The HTTP header key. It is case insensitive.
     #[prost(string, tag = "1")]

@@ -67,38 +67,62 @@ mod tests {
         // });
         let create_metric_descriptor = create_metric_descriptor.get(0).unwrap().clone();
 
-        let expected_create_metric_descriptor = CreateMetricDescriptorRequest {
-            name: "projects/fake_project_id".to_string(),
-            metric_descriptor: Some(MetricDescriptor {
-                name: "".to_string(),
-                r#type: "workload.googleapis.com/myhistogram".to_string(),
-                labels: vec![
-                    gcloud_sdk::google::api::LabelDescriptor {
-                        key: "string".to_string(),
-                        value_type: gcloud_sdk::google::api::label_descriptor::ValueType::String.into(),
-                        description: "".to_string(),
-                    },
-                    gcloud_sdk::google::api::LabelDescriptor {
-                        key: "int".to_string(),
-                        value_type: gcloud_sdk::google::api::label_descriptor::ValueType::String.into(),
-                        description: "".to_string(),
-                    },
-                    gcloud_sdk::google::api::LabelDescriptor {
-                        key: "float".to_string(),
-                        value_type: gcloud_sdk::google::api::label_descriptor::ValueType::String.into(),
-                        description: "".to_string(),
-                    },
-                ],
-                metric_kind: gcloud_sdk::google::api::metric_descriptor::MetricKind::Cumulative.into(),
-                value_type: gcloud_sdk::google::api::metric_descriptor::ValueType::Distribution.into(),
-                unit: "myunit".to_string(),
-                description: "foo".to_string(),
-                display_name: "myhistogram".to_string(),
-                metadata: None,
-                launch_stage: gcloud_sdk::google::api::LaunchStage::Unspecified.into(),
-                monitored_resource_types: Vec::new(),
-            }),
-        };
+        let expected_create_metric_descriptor = google_cloud_monitoring_v3::model::CreateMetricDescriptorRequest::new()
+            .set_name("projects/fake_project_id".to_string())
+            .set_metric_descriptor(
+                google_cloud_api::model::MetricDescriptor::new()
+                    .set_type("workload.googleapis.com/myhistogram")
+                    .set_labels([
+                        google_cloud_api::model::LabelDescriptor::new()
+                            .set_key("string")
+                            .set_value_type(google_cloud_api::model::label_descriptor::ValueType::String),
+                        google_cloud_api::model::LabelDescriptor::new()
+                            .set_key("int")
+                            .set_value_type(google_cloud_api::model::label_descriptor::ValueType::String),
+                        google_cloud_api::model::LabelDescriptor::new()
+                            .set_key("float")
+                            .set_value_type(google_cloud_api::model::label_descriptor::ValueType::String),
+                    ])
+                    .set_metric_kind(google_cloud_api::model::metric_descriptor::MetricKind::Cumulative)
+                    .set_value_type(google_cloud_api::model::metric_descriptor::ValueType::Distribution)
+                    .set_unit("myunit")
+                    .set_description("foo")
+                    .set_display_name("myhistogram")
+                    .set_launch_stage(google_cloud_api::model::LaunchStage::Unspecified),
+            );
+
+        // let expected_create_metric_descriptor = CreateMetricDescriptorRequest {
+        //     name: "projects/fake_project_id".to_string(),
+        //     metric_descriptor: Some(MetricDescriptor {
+        //         name: "".to_string(),
+        //         r#type: "workload.googleapis.com/myhistogram".to_string(),
+        //         labels: vec![
+        //             gcloud_sdk::google::api::LabelDescriptor {
+        //                 key: "string".to_string(),
+        //                 value_type: gcloud_sdk::google::api::label_descriptor::ValueType::String.into(),
+        //                 description: "".to_string(),
+        //             },
+        //             gcloud_sdk::google::api::LabelDescriptor {
+        //                 key: "int".to_string(),
+        //                 value_type: gcloud_sdk::google::api::label_descriptor::ValueType::String.into(),
+        //                 description: "".to_string(),
+        //             },
+        //             gcloud_sdk::google::api::LabelDescriptor {
+        //                 key: "float".to_string(),
+        //                 value_type: gcloud_sdk::google::api::label_descriptor::ValueType::String.into(),
+        //                 description: "".to_string(),
+        //             },
+        //         ],
+        //         metric_kind: gcloud_sdk::google::api::metric_descriptor::MetricKind::Cumulative.into(),
+        //         value_type: gcloud_sdk::google::api::metric_descriptor::ValueType::Distribution.into(),
+        //         unit: "myunit".to_string(),
+        //         description: "foo".to_string(),
+        //         display_name: "myhistogram".to_string(),
+        //         metadata: None,
+        //         launch_stage: gcloud_sdk::google::api::LaunchStage::Unspecified.into(),
+        //         monitored_resource_types: Vec::new(),
+        //     }),
+        // };
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
         let create_time_series = res
@@ -132,120 +156,172 @@ mod tests {
             true
         );
         create_time_series.time_series[0].points[0].interval = None;
-        let expected_create_time_series = CreateTimeSeriesRequest {
-            name: "projects/fake_project_id".to_string(),
-            time_series: vec![
-                TimeSeries {
-                    metric: Some(
-                        gcloud_sdk::google::api::Metric {
-                            r#type: "workload.googleapis.com/myhistogram".to_string(),
-                            labels: HashMap::from([
-                                ("float".to_string(), "123.4".to_string()),
-                                ("string".to_string(), "string".to_string()),
-                                ("int".to_string(), "123".to_string()),
-                            ]),
-                        },
-                    ),
-                    resource: Some(
-                        gcloud_sdk::google::api::MonitoredResource {
-                            r#type: "generic_node".to_string(),
-                            labels: HashMap::from([
-                                ("location".to_string(), "global".to_string()),
-                                ("namespace".to_string(), "".to_string()),
-                                ("node_id".to_string(), "".to_string()),
-                            ]),
-                        },
-                    ),
-                    metadata: None,
-                    metric_kind: gcloud_sdk::google::api::metric_descriptor::MetricKind::Cumulative.into(),
-                    value_type: gcloud_sdk::google::api::metric_descriptor::ValueType::Distribution.into(),
-                    points: vec![
-                        Point {
-                            interval: None,
-                            //TODO need to ignore interval for now
-                            // interval: Some(
-                            //     TimeInterval {
-                            //         end_time: Some(
-                            //             gcloud_sdk::prost_types::Timestamp {
-                            //                 seconds: 1723249032,
-                            //                 nanos: 972447000,
-                            //             },
-                            //         ),
-                            //         start_time: Some(
-                            //             gcloud_sdk::prost_types::Timestamp {
-                            //                 seconds: 1723249032,
-                            //                 nanos: 929246000,
-                            //             },
-                            //         ),
-                            //     },
-                            // ),
-                            value: Some(
-                                TypedValue {
-                                    value: Some(
-                                        gcloud_sdk::google::monitoring::v3::typed_value::Value::DistributionValue(
-                                            gcloud_sdk::google::api::Distribution {
-                                                count: 10000,
-                                                mean: 4999.5,
-                                                sum_of_squared_deviation: 0.0,
-                                                range: None,
-                                                bucket_options: Some(
-                                                    gcloud_sdk::google::api::distribution::BucketOptions {
-                                                        options: Some(
-                                                            gcloud_sdk::google::api::distribution::bucket_options::Options::ExplicitBuckets(
-                                                                gcloud_sdk::google::api::distribution::bucket_options::Explicit {
-                                                                    bounds: [
-                                                                        0.0,
-                                                                        5.0,
-                                                                        10.0,
-                                                                        25.0,
-                                                                        50.0,
-                                                                        75.0,
-                                                                        100.0,
-                                                                        250.0,
-                                                                        500.0,
-                                                                        750.0,
-                                                                        1000.0,
-                                                                        2500.0,
-                                                                        5000.0,
-                                                                        7500.0,
-                                                                        10000.0,
-                                                                    ].to_vec(),
-                                                                },
-                                                            ),
-                                                        ),
-                                                    },
-                                                ),
-                                                bucket_counts: [
-                                                    1,
-                                                    5,
-                                                    5,
-                                                    15,
-                                                    25,
-                                                    25,
-                                                    25,
-                                                    150,
-                                                    250,
-                                                    250,
-                                                    250,
-                                                    1500,
-                                                    2500,
-                                                    2500,
-                                                    2499,
-                                                    0,
-                                                ].to_vec(),
-                                                exemplars: [].to_vec(),
-                                            },
-                                        ),
+        let expected_create_time_series = google_cloud_monitoring_v3::model::CreateTimeSeriesRequest::new()
+            .set_name("projects/fake_project_id".to_string())
+            .set_time_series(vec![google_cloud_monitoring_v3::model::TimeSeries::new()
+                .set_metric(
+                    google_cloud_api::model::Metric::new()
+                        .set_type("workload.googleapis.com/myhistogram")
+                        .set_labels(HashMap::from([
+                            ("float".to_string(), "123.4".to_string()),
+                            ("string".to_string(), "string".to_string()),
+                            ("int".to_string(), "123".to_string()),
+                        ])),
+                )
+                .set_resource(
+                    google_cloud_api::model::MonitoredResource::new()
+                        .set_type("generic_node")
+                        .set_labels(HashMap::from([
+                            ("location".to_string(), "global".to_string()),
+                            ("namespace".to_string(), "".to_string()),
+                            ("node_id".to_string(), "".to_string()),
+                        ])),
+                )
+                .set_metric_kind(google_cloud_api::model::metric_descriptor::MetricKind::Cumulative)
+                .set_value_type(google_cloud_api::model::metric_descriptor::ValueType::Distribution)
+                .set_points(vec![google_cloud_monitoring_v3::model::Point::new()
+                    // .set_interval(
+                    //     google_cloud_monitoring_v3::model::TimeInterval::new()
+                    //         .set_start_time(google_cloud_wkt::Timestamp::new(1723249032, 929246000).unwrap())
+                    //         .set_end_time(google_cloud_wkt::Timestamp::new(1723249032, 972447000).unwrap()),
+                    // )
+                    .set_value(
+                        google_cloud_monitoring_v3::model::TypedValue::new().set_distribution_value(
+                            google_cloud_api::model::Distribution::new()
+                                .set_count(10000)
+                                .set_mean(4999.5)
+                                .set_sum_of_squared_deviation(0.0)
+                                .set_bucket_options(
+                                    google_cloud_api::model::distribution::BucketOptions::new().set_explicit_buckets(
+                                        google_cloud_api::model::distribution::bucket_options::Explicit::new()
+                                            .set_bounds(vec![
+                                                0.0, 5.0, 10.0, 25.0, 50.0, 75.0, 100.0, 250.0, 500.0, 750.0, 1000.0,
+                                                2500.0, 5000.0, 7500.0, 10000.0,
+                                            ]),
                                     ),
-                                },
-                            ),
-                        },
-                    ],
-                    unit: "myunit".to_string(),
-                },
-            ],
-        };
-        assert_eq_sorted!(create_time_series, expected_create_time_series);
+                                )
+                                .set_bucket_counts(vec![
+                                    1, 5, 5, 15, 25, 25, 25, 150, 250, 250, 250, 1500, 2500, 2500, 2499, 0,
+                                ]),
+                        ),
+                    )])
+                .set_unit("myunit")]);
+
+        // let expected_create_time_series = CreateTimeSeriesRequest {
+        //     name: "projects/fake_project_id".to_string(),
+        //     time_series: vec![
+        //         TimeSeries {
+        //             metric: Some(
+        //                 gcloud_sdk::google::api::Metric {
+        //                     r#type: "workload.googleapis.com/myhistogram".to_string(),
+        //                     labels: HashMap::from([
+        //                         ("float".to_string(), "123.4".to_string()),
+        //                         ("string".to_string(), "string".to_string()),
+        //                         ("int".to_string(), "123".to_string()),
+        //                     ]),
+        //                 },
+        //             ),
+        //             resource: Some(
+        //                 gcloud_sdk::google::api::MonitoredResource {
+        //                     r#type: "generic_node".to_string(),
+        //                     labels: HashMap::from([
+        //                         ("location".to_string(), "global".to_string()),
+        //                         ("namespace".to_string(), "".to_string()),
+        //                         ("node_id".to_string(), "".to_string()),
+        //                     ]),
+        //                 },
+        //             ),
+        //             metadata: None,
+        //             metric_kind: gcloud_sdk::google::api::metric_descriptor::MetricKind::Cumulative.into(),
+        //             value_type: gcloud_sdk::google::api::metric_descriptor::ValueType::Distribution.into(),
+        //             points: vec![
+        //                 Point {
+        //                     interval: None,
+        //                     //TODO need to ignore interval for now
+        //                     // interval: Some(
+        //                     //     TimeInterval {
+        //                     //         end_time: Some(
+        //                     //             gcloud_sdk::prost_types::Timestamp {
+        //                     //                 seconds: 1723249032,
+        //                     //                 nanos: 972447000,
+        //                     //             },
+        //                     //         ),
+        //                     //         start_time: Some(
+        //                     //             gcloud_sdk::prost_types::Timestamp {
+        //                     //                 seconds: 1723249032,
+        //                     //                 nanos: 929246000,
+        //                     //             },
+        //                     //         ),
+        //                     //     },
+        //                     // ),
+        //                     value: Some(
+        //                         TypedValue {
+        //                             value: Some(
+        //                                 gcloud_sdk::google::monitoring::v3::typed_value::Value::DistributionValue(
+        //                                     gcloud_sdk::google::api::Distribution {
+        //                                         count: 10000,
+        //                                         mean: 4999.5,
+        //                                         sum_of_squared_deviation: 0.0,
+        //                                         range: None,
+        //                                         bucket_options: Some(
+        //                                             gcloud_sdk::google::api::distribution::BucketOptions {
+        //                                                 options: Some(
+        //                                                     gcloud_sdk::google::api::distribution::bucket_options::Options::ExplicitBuckets(
+        //                                                         gcloud_sdk::google::api::distribution::bucket_options::Explicit {
+        //                                                             bounds: [
+        //                                                                 0.0,
+        //                                                                 5.0,
+        //                                                                 10.0,
+        //                                                                 25.0,
+        //                                                                 50.0,
+        //                                                                 75.0,
+        //                                                                 100.0,
+        //                                                                 250.0,
+        //                                                                 500.0,
+        //                                                                 750.0,
+        //                                                                 1000.0,
+        //                                                                 2500.0,
+        //                                                                 5000.0,
+        //                                                                 7500.0,
+        //                                                                 10000.0,
+        //                                                             ].to_vec(),
+        //                                                         },
+        //                                                     ),
+        //                                                 ),
+        //                                             },
+        //                                         ),
+        //                                         bucket_counts: [
+        //                                             1,
+        //                                             5,
+        //                                             5,
+        //                                             15,
+        //                                             25,
+        //                                             25,
+        //                                             25,
+        //                                             150,
+        //                                             250,
+        //                                             250,
+        //                                             250,
+        //                                             1500,
+        //                                             2500,
+        //                                             2500,
+        //                                             2499,
+        //                                             0,
+        //                                         ].to_vec(),
+        //                                         exemplars: [].to_vec(),
+        //                                     },
+        //                                 ),
+        //                             ),
+        //                         },
+        //                     ),
+        //                 },
+        //             ],
+        //             unit: "myunit".to_string(),
+        //         },
+        //     ],
+        // };
+        // assert_eq_sorted!(create_time_series, expected_create_time_series);
+        assert_eq_all_sorted!(create_time_series, expected_create_time_series);
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]

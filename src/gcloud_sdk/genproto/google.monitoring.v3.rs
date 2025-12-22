@@ -3041,12 +3041,12 @@ pub struct TimeSeries {
     /// be changed through CreateTimeSeries when it is empty.
     #[prost(string, tag = "8")]
     pub unit: ::prost::alloc::string::String,
-    // /// Input only. A detailed description of the time series that will be
-    // /// associated with the
-    // /// \[google.api.MetricDescriptor\]\[google.api.MetricDescriptor\] for the metric.
-    // /// Once set, this field cannot be changed through CreateTimeSeries.
-    // #[prost(string, tag = "9")]
-    // pub description: ::prost::alloc::string::String,
+    /// Input only. A detailed description of the time series that will be
+    /// associated with the
+    /// \[google.api.MetricDescriptor\]\[google.api.MetricDescriptor\] for the metric.
+    /// Once set, this field cannot be changed through CreateTimeSeries.
+    #[prost(string, tag = "9")]
+    pub description: ::prost::alloc::string::String,
 }
 /// A descriptor for the labels and points in a time series.
 #[derive(Clone, PartialEq, ::prost::Message)]

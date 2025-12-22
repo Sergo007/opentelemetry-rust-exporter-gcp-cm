@@ -67,6 +67,7 @@ pub fn sum_convert_f64<T: ToF64 + Copy>(
         }),
         points: vec![point],
         unit: descriptor.unit.clone(),
+        description: "".to_string(),
     };
     time_series
 }
@@ -127,6 +128,7 @@ pub fn sum_convert_i64<T: ToI64 + Copy>(
         }),
         points: vec![point],
         unit: descriptor.unit.clone(),
+        description: "".to_string(),
     };
     time_series
 }
@@ -189,6 +191,7 @@ pub fn gauge_convert_f64<T: ToF64 + Copy>(
         }),
         points: vec![point],
         unit: descriptor.unit.clone(),
+        description: "".to_string(),
     };
     time_series
 }
@@ -251,6 +254,7 @@ pub fn gauge_convert_i64<T: ToI64 + Copy>(
         }),
         points: vec![point],
         unit: descriptor.unit.clone(),
+        description: "".to_string(),
     };
     time_series
 }

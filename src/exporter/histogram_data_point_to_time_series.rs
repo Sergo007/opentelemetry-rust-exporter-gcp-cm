@@ -77,6 +77,7 @@ pub fn convert<T: ToF64 + Copy>(
         }),
         points: vec![point],
         unit: descriptor.unit.clone(),
+        description: "".to_string(),
     };
     time_series
 }

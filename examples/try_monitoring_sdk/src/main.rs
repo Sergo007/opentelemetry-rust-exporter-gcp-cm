@@ -1,22 +1,20 @@
-#[cfg_attr(test, mockall::automock)]
-trait MetricServiceTrait {
-    async fn create_metric_descriptor_call(
-        &self,
-        req: google_cloud_monitoring_v3::model::CreateMetricDescriptorRequest,
-    ) -> Result<google_cloud_api::model::MetricDescriptor, Box<dyn std::error::Error>>;
-}
+#[cfg(test)]
+mockall::mock! {
+    #[derive(Debug)]
+    pub MetricService {}
 
-impl MetricServiceTrait for google_cloud_monitoring_v3::client::MetricService {
-    async fn create_metric_descriptor_call(
-        &self,
-        req: google_cloud_monitoring_v3::model::CreateMetricDescriptorRequest,
-    ) -> Result<google_cloud_api::model::MetricDescriptor, Box<dyn std::error::Error>> {
-        let resp = self.create_metric_descriptor().with_request(req).send().await?;
-        Ok(resp)
+    impl google_cloud_monitoring_v3::stub::MetricService for MetricService {
+        fn create_metric_descriptor(
+            &self,
+            _req: google_cloud_monitoring_v3::model::CreateMetricDescriptorRequest,
+            _options: google_cloud_gax::options::RequestOptions,
+        ) -> impl std::future::Future<
+            Output = google_cloud_monitoring_v3::Result<google_cloud_gax::response::Response<google_cloud_api::model::MetricDescriptor>>,
+        > + Send;
     }
 }
 
-async fn try_monitoring_sdk<T: MetricServiceTrait>(metric_service: &T) {
+async fn try_monitoring_sdk(metric_service: &google_cloud_monitoring_v3::client::MetricService) {
     let req = google_cloud_monitoring_v3::model::CreateMetricDescriptorRequest::new()
         .set_name("projects/cybx-chat".to_string())
         .set_metric_descriptor(
@@ -34,7 +32,12 @@ async fn try_monitoring_sdk<T: MetricServiceTrait>(metric_service: &T) {
     // );
     // println!("CreateMetricDescriptorRequest: {:?}", req);
 
-    let resp = metric_service.create_metric_descriptor_call(req).await.unwrap();
+    let resp = metric_service
+        .create_metric_descriptor()
+        .with_request(req)
+        .send()
+        .await
+        .unwrap();
 
     println!(
         "Created Metric Descriptor: {}",
@@ -61,42 +64,45 @@ mod tests {
 
     #[tokio::test]
     async fn test_try_monitoring_sdk_with_mock() {
-        let mut mock_service = MockMetricServiceTrait::new();
+        let mut mock_service = MockMetricService::new();
 
         // Setup mock expectations
         mock_service
-            .expect_create_metric_descriptor_call()
+            .expect_create_metric_descriptor()
             .times(1)
-            .withf(
-                move |req: &google_cloud_monitoring_v3::model::CreateMetricDescriptorRequest| {
-                    // Verify the request parameters
-                    let should_be = google_cloud_monitoring_v3::model::CreateMetricDescriptorRequest::new()
-                        .set_name("projects/cybx-chat".to_string())
-                        .set_metric_descriptor(
-                            google_cloud_api::model::MetricDescriptor::new()
-                                .set_type("custom.googleapis.com/opencensus/cybx.io/try_monitoring_sdk")
-                                .set_metric_kind(google_cloud_api::model::metric_descriptor::MetricKind::Gauge)
-                                .set_value_type(google_cloud_api::model::metric_descriptor::ValueType::Double)
-                                .set_unit("1")
-                                .set_description("My custom metric")
-                                .set_display_name("My Metric"),
-                        );
-                    assert_eq_all_sorted!(&req, &should_be);
-                    true
-                },
-            )
-            .returning(|_req| {
-                Ok(google_cloud_api::model::MetricDescriptor::new()
+            .withf(move |req, _options| {
+                // Verify the request parameters
+                let should_be = google_cloud_monitoring_v3::model::CreateMetricDescriptorRequest::new()
+                    .set_name("projects/cybx-chat".to_string())
+                    .set_metric_descriptor(
+                        google_cloud_api::model::MetricDescriptor::new()
+                            .set_type("custom.googleapis.com/opencensus/cybx.io/try_monitoring_sdk")
+                            .set_metric_kind(google_cloud_api::model::metric_descriptor::MetricKind::Gauge)
+                            .set_value_type(google_cloud_api::model::metric_descriptor::ValueType::Double)
+                            .set_unit("1")
+                            .set_description("My custom metric")
+                            .set_display_name("My Metric"),
+                    );
+                assert_eq_all_sorted!(&req, &should_be);
+                true
+            })
+            .returning(|_req, _options| {
+                let resp = google_cloud_api::model::MetricDescriptor::new()
                     .set_type("custom.googleapis.com/opencensus/cybx.io/try_monitoring_sdk")
                     .set_metric_kind(google_cloud_api::model::metric_descriptor::MetricKind::Gauge)
                     .set_value_type(google_cloud_api::model::metric_descriptor::ValueType::Double)
                     .set_unit("1")
                     .set_description("My custom metric")
-                    .set_display_name("My Metric"))
+                    .set_display_name("My Metric");
+                let response = google_cloud_gax::response::Response::from(resp);
+                Box::pin(async move { Ok(response) })
             });
 
         // Call the function with the mock
-        try_monitoring_sdk(&mock_service).await;
+
+        let client = google_cloud_monitoring_v3::client::MetricService::from_stub(mock_service);
+
+        try_monitoring_sdk(&client).await;
 
         // Mock will automatically verify that create_metric_descriptor_call was called exactly once
         // with the expected parameters when it goes out of scope

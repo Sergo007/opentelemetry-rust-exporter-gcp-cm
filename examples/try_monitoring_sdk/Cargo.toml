@@ -19,4 +19,7 @@ pretty_assertions = "1.4.1"
 # todo contribute to the project to add the sorted feature
 pretty_assertions_sorted_fork = { version = "0.10.0" }
 tokio                         = { version = "1.0", features = ["full"] }
-mockall                       = { default-features = false, version = "0.14" }
+mockall                       = { version = "0.14" }
+async-trait                   = "0.1"
+
+google-cloud-gax = { version = "1.4" }

@@ -1,15 +1,7 @@
 #[cfg(test)]
-use once_cell::sync::Lazy;
-#[cfg(test)]
-use std::sync::Mutex;
-#[cfg(test)]
-static THE_RESOURCE: Lazy<Mutex<()>> = Lazy::new(Mutex::default);
-#[cfg(test)]
 mod tests {
     // use crate::gcloud_sdk;
     // use crate::gcloud_sdk::google::api::MetricDescriptor;
-    use crate::gcloud_sdk::google::monitoring::v3::*;
-    use crate::tests::test_cloud_monitoring::THE_RESOURCE;
     use crate::tests::test_utils::*;
 
     use opentelemetry::metrics::MeterProvider;
@@ -21,7 +13,6 @@ mod tests {
         Resource,
     };
     use pretty_assertions_sorted_fork::{assert_eq, assert_eq_all_sorted};
-    use prost::Message;
     use std::collections::HashMap;
 
     fn my_unit() -> String {
@@ -30,9 +21,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_histogram_default_buckets() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let histogram = meter
             .f64_histogram("myhistogram")
@@ -51,16 +41,7 @@ mod tests {
             );
         }
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -92,15 +73,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -109,6 +82,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_some(),
@@ -117,6 +91,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -178,9 +153,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_histogram_single_bucket() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let exporter = crate::GCPMetricsExporter::fake_new();
+        let mock_service = MockMetricService::new();
+        let exporter = init_metrics_exporter(mock_service.clone());
         let reader = PeriodicReader::builder(exporter, runtime::Tokio).build();
         let my_view_change_aggregation = |i: &Instrument| {
             if i.name() == "my_single_bucket_histogram" {
@@ -230,16 +204,7 @@ mod tests {
             );
         }
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -271,15 +236,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -288,6 +245,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_some(),
@@ -296,6 +254,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -355,9 +314,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_up_down_counter_float() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let updowncounter = meter
             .f64_up_down_counter("myupdowncounter")
@@ -374,16 +332,7 @@ mod tests {
             ],
         );
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -415,15 +364,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -433,6 +374,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_none(),
@@ -441,6 +383,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -485,9 +428,8 @@ mod tests {
     }
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_up_down_counter_int() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let updowncounter = meter
             .i64_up_down_counter("myupdowncounter")
@@ -504,16 +446,7 @@ mod tests {
             ],
         );
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -545,15 +478,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -563,6 +488,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_none(),
@@ -571,6 +497,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -616,9 +543,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_observable_up_down_counter_int() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let updowncounter = meter
             .i64_observable_up_down_counter("myobservablecounter")
@@ -637,16 +563,7 @@ mod tests {
 
         let _updowncounter = updowncounter.build();
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -678,15 +595,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -696,6 +605,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_none(),
@@ -704,6 +614,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -749,9 +660,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_observable_up_down_counter_float() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let updowncounter = meter
             .f64_observable_up_down_counter("myobservablecounter")
@@ -770,16 +680,7 @@ mod tests {
 
         let _updowncounter = updowncounter.build();
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -811,15 +712,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -829,6 +722,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_none(),
@@ -837,6 +731,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -882,9 +777,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_observable_counter_int() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let updowncounter = meter
             .u64_observable_counter("myobservablecounter")
@@ -903,16 +797,7 @@ mod tests {
 
         let _updowncounter = updowncounter.build();
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -944,15 +829,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -962,6 +839,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_some(),
@@ -970,6 +848,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -1015,9 +894,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_observable_counter_float() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let updowncounter = meter
             .f64_observable_counter("myobservablecounter")
@@ -1036,16 +914,7 @@ mod tests {
 
         let _updowncounter = updowncounter.build();
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -1077,15 +946,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -1095,6 +956,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_some(),
@@ -1103,6 +965,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -1147,9 +1010,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_observable_gauge_int() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let updowncounter = meter
             .u64_observable_gauge("myobservablegauge")
@@ -1168,16 +1030,8 @@ mod tests {
 
         let _updowncounter = updowncounter.build();
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -1209,15 +1063,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -1227,6 +1073,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_none(),
@@ -1235,6 +1082,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -1279,9 +1127,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_observable_gauge_float() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let updowncounter = meter
             .f64_observable_gauge("myobservablegauge")
@@ -1300,16 +1147,7 @@ mod tests {
 
         let _updowncounter = updowncounter.build();
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -1341,15 +1179,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -1359,6 +1189,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_none(),
@@ -1367,6 +1198,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -1411,9 +1243,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_counter_int() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let mycounter = meter
             .u64_counter("mycounter")
@@ -1431,16 +1262,7 @@ mod tests {
             ],
         );
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -1472,15 +1294,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -1490,6 +1304,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_some(),
@@ -1498,6 +1313,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -1542,9 +1358,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_counter_float() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let mycounter = meter
             .f64_counter("mycounter")
@@ -1562,16 +1377,7 @@ mod tests {
             ],
         );
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -1603,15 +1409,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -1621,6 +1419,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_some(),
@@ -1629,6 +1428,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -1673,9 +1473,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_invalid_label_keys() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(mock_service.clone(), vec![KeyValue::new("service.name", "metric-demo")]);
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let mycounter = meter
             .u64_counter("mycounter")
@@ -1686,16 +1485,7 @@ mod tests {
 
         mycounter.add(12, &[KeyValue::new("1some.invalid$\\key", "value")]);
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -1719,15 +1509,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -1737,6 +1519,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_some(),
@@ -1745,6 +1528,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -1787,16 +1571,18 @@ mod tests {
     }
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_with_resource() {
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![
-            KeyValue::new("cloud.platform", "gcp_kubernetes_engine"),
-            KeyValue::new("cloud.availability_zone", "myavailzone"),
-            KeyValue::new("k8s.cluster.name", "mycluster"),
-            KeyValue::new("k8s.namespace.name", "myns"),
-            KeyValue::new("k8s.pod.name", "mypod"),
-            KeyValue::new("k8s.container.name", "mycontainer"),
-        ]);
+        let mock_service = MockMetricService::new();
+        let metrics_provider = init_metrics(
+            mock_service.clone(),
+            vec![
+                KeyValue::new("cloud.platform", "gcp_kubernetes_engine"),
+                KeyValue::new("cloud.availability_zone", "myavailzone"),
+                KeyValue::new("k8s.cluster.name", "mycluster"),
+                KeyValue::new("k8s.namespace.name", "myns"),
+                KeyValue::new("k8s.pod.name", "mypod"),
+                KeyValue::new("k8s.container.name", "mycontainer"),
+            ],
+        );
         let meter = metrics_provider.meter("test_cloud_monitoring");
         let mycounter = meter
             .u64_counter("mycounter")
@@ -1813,16 +1599,7 @@ mod tests {
             ],
         );
         metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateMetricDescriptorRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateMetricDescriptorRequest>>();
+        let create_metric_descriptor = mock_service.expect_create_metric_descriptor().await;
         // create_metric_descriptor.iter().for_each(|v| {
         //     println!("create_metric_descriptor -->");
         //     println!("{:#?}", v);
@@ -1854,15 +1631,7 @@ mod tests {
             );
         assert_eq_all_sorted!(create_metric_descriptor, expected_create_metric_descriptor);
 
-        let create_time_series = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = CreateTimeSeriesRequest::decode(v.message.as_slice()).unwrap();
-                msg
-            })
-            .collect::<Vec<CreateTimeSeriesRequest>>();
+        let create_time_series = mock_service.expect_create_time_series().await;
         // create_time_series.iter().for_each(|v| {
         //     println!("create_time_series -->");
         //     println!("{:#?}", v);
@@ -1872,6 +1641,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .start_time
                 .is_some(),
@@ -1880,6 +1650,7 @@ mod tests {
         assert_eq!(
             create_time_series.time_series[0].points[0]
                 .interval
+                .as_ref()
                 .unwrap()
                 .end_time
                 .is_some(),
@@ -1922,85 +1693,5 @@ mod tests {
                     )])
                 .set_unit("myunit")]);
         assert_eq_all_sorted!(create_time_series, expected_create_time_series);
-    }
-    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-    #[ignore]
-    async fn test_user_agent() {
-        // def test_with_resource(
-        //     gcmfake_meter_provider: GcmFakeMeterProvider,
-        //     gcmfake: GcmFake,
-        // ) -> None:
-        //     meter_provider = gcmfake_meter_provider()
-        //     counter = meter_provider.get_meter(__name__).create_counter(
-        //         "mycounter", description="foo", unit="{myunit}"
-        //     )
-        //     counter.add(12)
-        //     meter_provider.force_flush()
-
-        //     for calls in gcmfake.get_calls().values():
-        //         for call in calls:
-        //             assert (
-        //                 re.match(
-        //                     r"^opentelemetry-python \S+; google-cloud-metric-exporter \S+ grpc-python/\S+",
-        //                     call.user_agent,
-        //                 )
-        //                 is not None
-        //             )
-
-        let _m = THE_RESOURCE.lock().unwrap();
-        let calls = get_gcm_calls().await;
-        let metrics_provider = init_metrics(vec![KeyValue::new("service.name", "metric-demo")]);
-        let meter = metrics_provider.meter("test_cloud_monitoring");
-        let mycounter = meter
-            .u64_counter("mycounter")
-            .with_description("foo")
-            .with_unit(my_unit());
-
-        let mycounter = mycounter.build();
-
-        mycounter.add(
-            45,
-            &[
-                KeyValue::new("string", "string"),
-                KeyValue::new("int", 123),
-                KeyValue::new("float", 123.4),
-            ],
-        );
-        metrics_provider.force_flush().unwrap();
-        let res = calls.read().await;
-        let create_metric_descriptor_user_agent = res
-            .get("CreateMetricDescriptor")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = v.user_agent.clone();
-                msg
-            })
-            .collect::<Vec<String>>();
-        // create_metric_descriptor.iter().for_each(|v| {
-        //     println!("create_metric_descriptor -->");
-        //     println!("{:#?}", v);
-        // });
-        let create_metric_descriptor_user_agent = create_metric_descriptor_user_agent.get(0).unwrap().clone();
-        println!(
-            "create_metric_descriptor_user_agent --> '{}'",
-            create_metric_descriptor_user_agent
-        );
-
-        assert!(false);
-
-        let create_time_series_user_agent = res
-            .get("CreateTimeSeries")
-            .unwrap()
-            .iter()
-            .map(|v| {
-                let msg = v.user_agent.clone();
-                msg
-            })
-            .collect::<Vec<String>>();
-        let create_time_series_user_agent = create_time_series_user_agent.get(0).unwrap().clone();
-        println!("create_time_series_user_agent --> '{}'", create_time_series_user_agent);
-
-        assert!(false);
     }
 }

@@ -31,7 +31,7 @@ async fn init_metrics() -> Result<SdkMeterProvider, Box<dyn std::error::Error>> 
             })),
         },
     );
-    let exporter = GCPMetricsExporter::new_gcp_auth(cfg).await?;
+    let exporter = GCPMetricsExporter::init(cfg).await?;
     // https://github.com/open-telemetry/opentelemetry-rust/blob/main/opentelemetry-sdk/CHANGELOG.md#0280
     let reader = periodic_reader_with_async_runtime::PeriodicReader::builder(exporter, runtime::Tokio)
         .with_interval(Duration::from_secs(15))

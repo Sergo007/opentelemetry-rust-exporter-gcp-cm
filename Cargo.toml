@@ -1,5 +1,5 @@
 [workspace]
-members = ["examples/*", "gcloud-protos-generator"]
+members = ["examples/*"]
 
 [package]
 name         = "opentelemetry_gcloud_monitoring_exporter"
@@ -18,9 +18,8 @@ exclude      = ["*.sh"]
 doctest = false
 
 [features]
-default  = ["gcp_auth", "tokio"]
-gcp_auth = ["dep:gcp_auth"]
-tokio    = ["dep:tokio", "opentelemetry_sdk/rt-tokio"]
+default = ["tokio"]
+tokio   = ["dep:tokio", "opentelemetry_sdk/rt-tokio"]
 
 [dependencies]
 opentelemetry     = { version = "0.31", features = ["metrics"] }
@@ -31,17 +30,10 @@ opentelemetry_resourcedetector_gcp_rust = { version = "0.19" }
 async-trait = "0.1"
 
 # json serializer/deserializer
-serde       = { version = "1.0", features = ["derive"] }
-serde_json  = "1.0"
-derive_more = { version = "2.0.1", features = ["full"] }
-url         = { version = "2.5.7", package = "url" }
-# Google sdk
-gcp_auth = { version = "0.12", optional = true }
-# gcloud-sdk = { version = "0.25", features = ["tls-roots", "google-monitoring-v3"] }
-prost       = "0.14.1"
-prost-types = "0.14.1"
-tonic-prost = { version = "0.14.2" }
-tonic       = { version = "0.14.2", features = ["gzip", "tls-native-roots", "transport"] }
+serde      = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# derive_more = { version = "2.0.1", features = ["full"] }
+# url         = { version = "2.5.7", package = "url" }
 
 unicode-segmentation = "1.12.0"
 tokio                = { version = "1", features = ["fs", "io-util", "sync", "time"], optional = true }

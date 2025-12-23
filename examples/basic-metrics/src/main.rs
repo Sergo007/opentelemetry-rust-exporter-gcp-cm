@@ -60,7 +60,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_line_number(true)
         .with_target(true)
         .init();
-    let meter_provider = init_metrics().await?;
+    let meter_provider = match init_metrics().await {
+        Ok(mp) => mp,
+        Err(e) => {
+            println!("Failed to initialize metrics: {}", e);
+            return Err(e);
+        }
+    };
     println!("start metrics");
 
     let meter = meter_provider.meter("user-event-test");

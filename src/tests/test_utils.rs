@@ -2,8 +2,8 @@ use opentelemetry_sdk;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use opentelemetry_sdk::metrics::{periodic_reader_with_async_runtime::PeriodicReader, SdkMeterProvider};
 use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::metrics::{SdkMeterProvider, periodic_reader_with_async_runtime::PeriodicReader};
 use tokio::sync::RwLock;
 
 #[cfg(test)]

@@ -27,6 +27,8 @@ use tokio::sync::RwLock;
 
 use utils::{get_data_points_attributes_keys, normalize_label_key};
 
+use crate::exporter::utils::get_project_id;
+
 pub(crate) const UNIQUE_IDENTIFIER_KEY: &str = "opentelemetry_id";
 
 /// Implementation of Metrics Exporter to Google Cloud Monitoring.
@@ -85,16 +87,10 @@ impl GCPMetricsExporter {
         config: GCPMetricsExporterConfig,
     ) -> Self {
         let my_rundom = format!("{:08x}", rand::rng().random_range(0..u32::MAX));
-        let custom_monitored_resource_data_project_id = config
-            .custom_monitored_resource_data
-            .as_ref()
-            .and_then(|v| v.labels.get("project_id").cloned());
         Self {
             prefix: config.prefix,
             add_unique_identifier: config.add_unique_identifier,
-            project_id: config
-                .project_id
-                .unwrap_or(custom_monitored_resource_data_project_id.unwrap_or(project_id)),
+            project_id: project_id,
             unique_identifier: my_rundom,
             metric_service,
             metric_descriptors: Arc::new(RwLock::new(HashMap::new())),
@@ -103,14 +99,42 @@ impl GCPMetricsExporter {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum GCPMetricsExporterInitError {
+    #[error("could not init gcp credentials")]
+    InitCredentials(#[source] google_cloud_gax::client_builder::Error),
+    #[error("could not detect project id automatically")]
+    ProjectIdDedection(#[source] std::io::Error),
+}
+
 impl GCPMetricsExporter {
-    pub async fn init(
-        config: GCPMetricsExporterConfig,
-    ) -> Result<GCPMetricsExporter, google_cloud_gax::client_builder::Error> {
+    pub async fn init(config: GCPMetricsExporterConfig) -> Result<GCPMetricsExporter, GCPMetricsExporterInitError> {
         let client = google_cloud_monitoring_v3::client::MetricService::builder()
             .build()
-            .await?;
-        Ok(GCPMetricsExporter::new(client, "".to_string(), config))
+            .await
+            .map_err(GCPMetricsExporterInitError::InitCredentials)?;
+
+        let custom_monitored_resource_data_project_id = config
+            .custom_monitored_resource_data
+            .as_ref()
+            .and_then(|v| v.labels.get("project_id").cloned());
+
+        let project_id = config.project_id.clone().or(custom_monitored_resource_data_project_id);
+
+        let project_id = match project_id {
+            Some(project_id) => project_id,
+            None => match get_project_id().await {
+                Ok(proj) => proj,
+                Err(err) => {
+                    return Err(GCPMetricsExporterInitError::ProjectIdDedection(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        err,
+                    )));
+                }
+            },
+        };
+
+        Ok(GCPMetricsExporter::new(client, project_id, config))
     }
 }
 

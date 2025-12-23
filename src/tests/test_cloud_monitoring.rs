@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod tests {
-    // use crate::gcloud_sdk;
-    // use crate::gcloud_sdk::google::api::MetricDescriptor;
     use crate::tests::test_utils::*;
 
     use opentelemetry::metrics::MeterProvider;

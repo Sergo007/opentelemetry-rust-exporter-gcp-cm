@@ -10,7 +10,6 @@ use tokio::sync::RwLock;
 #[derive(Debug, Clone)]
 pub(crate) struct GcmCall {
     pub message: String,
-    // pub user_agent: String,
 }
 
 #[cfg(test)]
@@ -133,7 +132,6 @@ impl google_cloud_monitoring_v3::stub::MetricService for MockMetricService {
     > + Send {
         let call = GcmCall {
             message: serde_json::to_string(&req).unwrap(),
-            // user_agent: "my-user-agent".to_string(),
         };
         let calls = self.calls.clone();
         Box::pin(async move {
@@ -143,12 +141,6 @@ impl google_cloud_monitoring_v3::stub::MetricService for MockMetricService {
                 .entry("CreateMetricDescriptor".to_string())
                 .or_default()
                 .push(call);
-            // println!("call fake CreateMetricDescriptor: {:?}", message);
-            // if message.metric_descriptor.is_none() {
-            //     return Err(Status::invalid_argument("metric_descriptor is required"));
-            // }
-            // CreateMetricDescriptorRequest::decode(message.encode_to_vec().as_slice())
-            //     .map_err(|e| Status::invalid_argument(format!("invalid message: {}", e)))?;
             Ok(google_cloud_gax::response::Response::from(
                 req.metric_descriptor.unwrap(),
             ))
@@ -187,7 +179,6 @@ impl google_cloud_monitoring_v3::stub::MetricService for MockMetricService {
     {
         let call = GcmCall {
             message: serde_json::to_string(&req).unwrap(),
-            // user_agent: "my-user-agent".to_string(),
         };
         let calls = self.calls.clone();
         Box::pin(async move {

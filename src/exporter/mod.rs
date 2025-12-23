@@ -9,9 +9,9 @@ use opentelemetry_resourcedetector_gcp_rust::mapping::get_monitored_resource;
 use opentelemetry_sdk::{
     error::OTelSdkError,
     metrics::{
+        Temporality,
         data::{AggregatedMetrics, Metric as OpentelemetrySdkMetric, MetricData, ResourceMetrics},
         exporter::PushMetricExporter as PushMetricsExporter,
-        Temporality,
     },
 };
 
@@ -85,10 +85,16 @@ impl GCPMetricsExporter {
         config: GCPMetricsExporterConfig,
     ) -> Self {
         let my_rundom = format!("{:08x}", rand::rng().random_range(0..u32::MAX));
+        let custom_monitored_resource_data_project_id = config
+            .custom_monitored_resource_data
+            .as_ref()
+            .and_then(|v| v.labels.get("project_id").cloned());
         Self {
             prefix: config.prefix,
             add_unique_identifier: config.add_unique_identifier,
-            project_id: config.project_id.unwrap_or(project_id),
+            project_id: config
+                .project_id
+                .unwrap_or(custom_monitored_resource_data_project_id.unwrap_or(project_id)),
             unique_identifier: my_rundom,
             metric_service,
             metric_descriptors: Arc::new(RwLock::new(HashMap::new())),

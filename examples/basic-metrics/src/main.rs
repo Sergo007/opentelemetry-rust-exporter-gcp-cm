@@ -54,6 +54,12 @@ async fn init_metrics() -> Result<SdkMeterProvider, Box<dyn std::error::Error>> 
 #[tokio::main]
 #[allow(unused_must_use)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt()
+        .with_thread_ids(true)
+        .with_file(true)
+        .with_line_number(true)
+        .with_target(true)
+        .init();
     let meter_provider = init_metrics().await?;
     println!("start metrics");
 

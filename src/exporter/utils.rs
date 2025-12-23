@@ -119,6 +119,28 @@ pub(crate) fn kv_map_k(kv: &KeyValue) -> String {
     kv.key.to_string()
 }
 
+pub(crate) async fn get_project_id() -> Result<String, String> {
+    if let Ok(project_id) = std::env::var("GOOGLE_CLOUD_PROJECT") {
+        return Ok(project_id);
+    }
+
+    let client = reqwest::Client::new();
+    let url = "http://metadata.google.internal/computeMetadata/v1/project/project-id";
+
+    let response = client.get(url).header("Metadata-Flavor", "Google").send().await;
+
+    match response {
+        Ok(res) => {
+            if res.status().is_success() {
+                Ok(res.text().await.map_err(|e| e.to_string())?)
+            } else {
+                Err(format!("Metadata server returned error: {}", res.status()))
+            }
+        }
+        Err(e) => Err(format!("Error querying metadata server: {}", e)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

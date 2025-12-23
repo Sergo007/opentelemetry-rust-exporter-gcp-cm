@@ -8,6 +8,7 @@ This library provides support for exporting metrics to Google Cloud Monitoring.
 For resource detection see [opentelemetry-resourcedetector-gcp-rust](https://github.com/Sergo007/opentelemetry-resourcedetector-gcp-rust).
 
 # Support OpenTelemetry SDK versions
+`opentelemetry_sdk:0.31      | opentelemetry_gcloud_monitoring_exporter:0.20  `\
 `opentelemetry_sdk:0.31      | opentelemetry_gcloud_monitoring_exporter:0.19.1  `\
 `opentelemetry_sdk:0.30      | opentelemetry_gcloud_monitoring_exporter:0.18  `\
 `opentelemetry_sdk:0.29      | opentelemetry_gcloud_monitoring_exporter:0.16  `\
@@ -25,7 +26,6 @@ or add to cargo.toml
 [dependencies]
 opentelemetry_gcloud_monitoring_exporter = { path = "../..", features = [
     "tokio",
-    "gcp_auth",
 ] }
 tokio = { version = "1.0", features = ["full"] }
 opentelemetry = { version = "0.31", features = ["metrics"] }
@@ -34,7 +34,7 @@ opentelemetry_sdk = { version = "0.31", features = [
     "rt-tokio",
     "experimental_metrics_periodicreader_with_async_runtime",
 ] }
-opentelemetry_resourcedetector_gcp_rust = "0.19.0"
+opentelemetry_resourcedetector_gcp_rust = "0.20.0"
 ```
 
 # Usage
@@ -53,8 +53,8 @@ use std::time::Duration;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut cfg = GCPMetricsExporterConfig::default();
     cfg.prefix = "custom.googleapis.com/test_service".to_string();
-    let exporter = GCPMetricsExporter::new_gcp_auth(cfg).await?;
-        // https://github.com/open-telemetry/opentelemetry-rust/blob/main/opentelemetry-sdk/CHANGELOG.md#0280
+    let exporter = GCPMetricsExporter::init(cfg).await?;
+        // https://github.com/open-telemetry/opentelemetry-rust/blob/main/opentelemetry-sdk/CHANGELOG.md#0310
     let reader =
         periodic_reader_with_async_runtime::PeriodicReader::builder(exporter, runtime::Tokio)
             .build();
@@ -109,7 +109,7 @@ Customize metric resource in google monitoring
             ]),
         },
     );
-    let exporter = GCPMetricsExporter::new_gcp_auth(cfg).await?;
+    let exporter = GCPMetricsExporter::init(cfg).await?;
     let reader = PeriodicReader::builder(exporter).build();
     SdkMeterProvider::builder()
         .with_reader(reader)
@@ -119,14 +119,11 @@ Customize metric resource in google monitoring
 ## References
 - [Cloud Monitoring](https://cloud.google.com/monitoring)
 - [OpenTelemetry Project](https://opentelemetry.io/)
-- [googleapis](https://github.com/googleapis/googleapis)
+- [Google Cloud Rust](https://github.com/googleapis/google-cloud-rust)
+- [Google Cloud Rust Crates](https://deps.rs/repo/github/googleapis/google-cloud-rust)
 
 
 ## Test cases from this repo
 [opentelemetry-exporter-gcp-monitoring python version](https://github.com/GoogleCloudPlatform/opentelemetry-operations-python/tree/main/opentelemetry-exporter-gcp-monitoring)
 
-## rebuild gcloud_sdk
-- `cd gcloud-protos-generator/proto`
-- `git clone git@github.com:googleapis/googleapis.git`
-- `cd ../../`
-- `cargo run -p gcloud_sdk_gen`
+

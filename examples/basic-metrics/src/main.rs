@@ -31,7 +31,7 @@ async fn init_metrics() -> Result<SdkMeterProvider, Box<dyn std::error::Error>> 
             })),
         },
     );
-    let exporter = GCPMetricsExporter::new_gcp_auth(cfg).await?;
+    let exporter = GCPMetricsExporter::init(cfg).await?;
     // https://github.com/open-telemetry/opentelemetry-rust/blob/main/opentelemetry-sdk/CHANGELOG.md#0280
     let reader = periodic_reader_with_async_runtime::PeriodicReader::builder(exporter, runtime::Tokio)
         .with_interval(Duration::from_secs(15))
@@ -54,7 +54,19 @@ async fn init_metrics() -> Result<SdkMeterProvider, Box<dyn std::error::Error>> 
 #[tokio::main]
 #[allow(unused_must_use)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let meter_provider = init_metrics().await?;
+    tracing_subscriber::fmt()
+        .with_thread_ids(true)
+        .with_file(true)
+        .with_line_number(true)
+        .with_target(true)
+        .init();
+    let meter_provider = match init_metrics().await {
+        Ok(mp) => mp,
+        Err(e) => {
+            println!("Failed to initialize metrics: {}", e);
+            return Err(e);
+        }
+    };
     println!("start metrics");
 
     let meter = meter_provider.meter("user-event-test");

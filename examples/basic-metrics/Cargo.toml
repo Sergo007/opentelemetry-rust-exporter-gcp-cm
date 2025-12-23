@@ -1,5 +1,5 @@
 [package]
-name = "basic-metrics"
+name    = "basic-metrics"
 version = "0.1.0"
 authors = ["Luca Palmieri <rust@lpalmieri.com>"]
 edition = "2018"
@@ -7,18 +7,14 @@ edition = "2018"
 license = "MIT/Apache-2.0"
 
 [dependencies]
-opentelemetry_gcloud_monitoring_exporter = { path = "../..", features = [
-    "tokio",
-    "gcp_auth",
-] }
-tokio = { version = "1.0", features = ["full"] }
-opentelemetry = { version = "0.31", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.31", features = [
-    "metrics",
-    "rt-tokio",
-    "experimental_metrics_periodicreader_with_async_runtime",
-] }
-opentelemetry_resourcedetector_gcp_rust = "0.19.0"
+opentelemetry_gcloud_monitoring_exporter = { path = "../..", features = ["tokio"] }
+tokio                                    = { version = "1.0", features = ["full"] }
+opentelemetry                            = { version = "0.31", features = ["metrics"] }
+opentelemetry_sdk                        = { version = "0.31", features = ["experimental_metrics_periodicreader_with_async_runtime", "metrics", "rt-tokio"] }
+opentelemetry_resourcedetector_gcp_rust  = "0.19.0"
 # json serializer/deserializer
-serde = { version = "1.0", features = ["derive"] }
+serde      = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+
+tracing            = "0.1"
+tracing-subscriber = "0.3"

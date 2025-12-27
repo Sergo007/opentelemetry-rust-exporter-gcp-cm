@@ -335,7 +335,19 @@ impl GCPMetricsExporter {
                                 ));
                             }
                         }
-                        MetricData::ExponentialHistogram(_) => {}
+                        MetricData::ExponentialHistogram(m) => {
+                            for data_point in m.data_points() {
+                                all_series.push(histogram_data_point_to_time_series::convert_exponential(
+                                    data_point,
+                                    &m.start_time(),
+                                    &m.time(),
+                                    &descriptor,
+                                    &monitored_resource_data,
+                                    self.add_unique_identifier,
+                                    self.unique_identifier.as_str(),
+                                ));
+                            }
+                        }
                         MetricData::Sum(m) => {
                             for data_point in m.data_points() {
                                 all_series.push(data_point_to_time_series::sum_convert_f64(
@@ -377,7 +389,19 @@ impl GCPMetricsExporter {
                                 ));
                             }
                         }
-                        MetricData::ExponentialHistogram(_) => {}
+                        MetricData::ExponentialHistogram(m) => {
+                            for data_point in m.data_points() {
+                                all_series.push(histogram_data_point_to_time_series::convert_exponential(
+                                    data_point,
+                                    &m.start_time(),
+                                    &m.time(),
+                                    &descriptor,
+                                    &monitored_resource_data,
+                                    self.add_unique_identifier,
+                                    self.unique_identifier.as_str(),
+                                ));
+                            }
+                        }
                         MetricData::Sum(m) => {
                             for data_point in m.data_points() {
                                 all_series.push(data_point_to_time_series::sum_convert_i64(
@@ -419,7 +443,19 @@ impl GCPMetricsExporter {
                                 ));
                             }
                         }
-                        MetricData::ExponentialHistogram(_) => {}
+                        MetricData::ExponentialHistogram(m) => {
+                            for data_point in m.data_points() {
+                                all_series.push(histogram_data_point_to_time_series::convert_exponential(
+                                    data_point,
+                                    &m.start_time(),
+                                    &m.time(),
+                                    &descriptor,
+                                    &monitored_resource_data,
+                                    self.add_unique_identifier,
+                                    self.unique_identifier.as_str(),
+                                ));
+                            }
+                        }
                         MetricData::Sum(m) => {
                             for data_point in m.data_points() {
                                 all_series.push(data_point_to_time_series::sum_convert_i64(

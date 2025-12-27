@@ -3,7 +3,7 @@ members = ["examples/*"]
 
 [package]
 name         = "opentelemetry_gcloud_monitoring_exporter"
-version      = "0.20.0"
+version      = "0.21.0"
 description  = "Provides support for exporting metrics to Google Cloud Monitoring."
 readme       = "README.md"
 keywords     = ["exporter", "google-cloud", "metrics", "monitoring", "opentelemetry"]

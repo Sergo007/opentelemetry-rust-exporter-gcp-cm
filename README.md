@@ -20,6 +20,10 @@ For resource detection see [opentelemetry-resourcedetector-gcp-rust](https://git
 
 `cargo add opentelemetry_resourcedetector_gcp_rust` - gcp resource detection 
 
+# GCP Permissions
+Role: `Monitoring Metric Writer` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`
+
+
 or add to cargo.toml
 
 ```

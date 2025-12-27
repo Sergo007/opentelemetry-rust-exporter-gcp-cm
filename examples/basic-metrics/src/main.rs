@@ -18,7 +18,8 @@ fn to_labels(kv: serde_json::Value) -> HashMap<String, String> {
         .collect()
 }
 async fn init_metrics() -> Result<SdkMeterProvider, Box<dyn std::error::Error>> {
-    std::env::set_var("GOOGLE_APPLICATION_CREDENTIALS", "/Users/serhiiyatsina/projects/cybx/opentelemetry/opentelemetry-rust-exporter-gcp-cm/.secrets/977645940426-compute@developer.gserviceaccount.com.json");
+    // std::env::set_var("GOOGLE_APPLICATION_CREDENTIALS", "/Users/serhiiyatsina/projects/cybx/opentelemetry/opentelemetry-rust-exporter-gcp-cm/.secrets/977645940426-compute@developer.gserviceaccount.com.json");
+    std::env::set_var("GOOGLE_APPLICATION_CREDENTIALS", "/Users/serhiiyatsina/projects/cybx/opentelemetry/opentelemetry-rust-exporter-gcp-cm/.secrets/no-access-to-metrics@cybx-chat.iam.gserviceaccount.com.json");
 
     let mut cfg = GCPMetricsExporterConfig::default();
     cfg.prefix = "custom.googleapis.com/opencensus/cybx.io/test_service".to_string();

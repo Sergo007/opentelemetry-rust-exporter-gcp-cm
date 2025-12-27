@@ -269,7 +269,25 @@ impl GCPMetricsExporter {
         {
             Ok(_) => {}
             Err(err) => {
-                utils::log_warning(format!("GCPMetricsExporter: Cant create metric descriptor: {:?}", err));
+                match err.status() {
+                    Some(status) if status.code == google_cloud_gax::error::rpc::Code::AlreadyExists => {
+                        // Metric descriptor already exists, this is fine.
+                        let mut metric_descriptors = self.metric_descriptors.write().await;
+                        metric_descriptors.insert(descriptor_type, descriptor.clone());
+                        return Some(descriptor);
+                    }
+                    Some(status) if status.code == google_cloud_gax::error::rpc::Code::PermissionDenied => {
+                        // Metric descriptor already exists, this is fine.
+                        tracing::warn!(
+                            "GCPMetricsExporter: PermissionDenied need access with role: `Monitoring Metric Writer` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`"
+                        );
+                        return None;
+                    }
+                    _ => {
+                        // Other errors are logged and we return None.
+                    }
+                }
+                tracing::debug!("GCPMetricsExporter: Cant create metric descriptor: {:?}", err);
                 return None;
             }
         }
@@ -503,8 +521,17 @@ impl GCPMetricsExporter {
             match self.metric_service.create_time_series().with_request(req).send().await {
                 Ok(_) => {}
                 Err(err) => {
-                    utils::log_warning(format!("GCPMetricsExporter: Cant send time series: {:?}", err));
-                    break;
+                    match err.status() {
+                        Some(status) if status.code == google_cloud_gax::error::rpc::Code::PermissionDenied => {
+                            tracing::warn!(
+                                "GCPMetricsExporter: PermissionDenied need access with role: `Monitoring Metric Writer` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`"
+                            );
+                            break;
+                        }
+                        _ => {}
+                    }
+                    tracing::debug!("GCPMetricsExporter: Cant send time series: {:?}", err);
+                    continue;
                 }
             }
         }

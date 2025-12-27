@@ -3,10 +3,6 @@ use opentelemetry_sdk::metrics::data::{AggregatedMetrics, MetricData};
 
 use std::collections::HashSet;
 
-pub(crate) fn log_warning(err: String) {
-    tracing::warn!("{}", err);
-}
-
 pub(crate) fn get_data_points_attributes_keys(data: &AggregatedMetrics) -> HashSet<String> {
     let attributes_keys: Vec<String> = match data {
         AggregatedMetrics::F64(v) => match v {

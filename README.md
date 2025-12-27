@@ -7,6 +7,9 @@ This library provides support for exporting metrics to Google Cloud Monitoring.
 
 For resource detection see [opentelemetry-resourcedetector-gcp-rust](https://github.com/Sergo007/opentelemetry-resourcedetector-gcp-rust).
 
+# GCP Permissions
+Role: `Monitoring Metric Writer (roles/monitoring.metricWriter)` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`
+
 # Support OpenTelemetry SDK versions
 `opentelemetry_sdk:0.31      | opentelemetry_gcloud_monitoring_exporter:0.22  `\
 `opentelemetry_sdk:0.31      | opentelemetry_gcloud_monitoring_exporter:0.19.1  `\
@@ -19,9 +22,6 @@ For resource detection see [opentelemetry-resourcedetector-gcp-rust](https://git
 `cargo add opentelemetry_gcloud_monitoring_exporter` - exporter
 
 `cargo add opentelemetry_resourcedetector_gcp_rust` - gcp resource detection 
-
-# GCP Permissions
-Role: `Monitoring Metric Writer (roles/monitoring.metricWriter)` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`
 
 
 or add to cargo.toml

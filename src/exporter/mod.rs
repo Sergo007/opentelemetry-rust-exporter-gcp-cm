@@ -155,14 +155,14 @@ impl GCPMetricsExporter {
     async fn get_metric_descriptor(
         &self,
         metric: &OpentelemetrySdkMetric,
-    ) -> Option<google_cloud_api::model::MetricDescriptor> {
+    ) -> Result<Option<google_cloud_api::model::MetricDescriptor>, OTelSdkError> {
         let descriptor_type = format!("{}/{}", self.prefix, metric.name());
         let cached_metric_descriptor = {
             let metric_descriptors = self.metric_descriptors.read().await;
             metric_descriptors.get(&descriptor_type).cloned()
         };
         if let Some(cached_metric_descriptor) = cached_metric_descriptor {
-            return Some(cached_metric_descriptor);
+            return Ok(Some(cached_metric_descriptor));
         }
 
         let unit = metric.unit().to_string();
@@ -274,21 +274,22 @@ impl GCPMetricsExporter {
                         // Metric descriptor already exists, this is fine.
                         let mut metric_descriptors = self.metric_descriptors.write().await;
                         metric_descriptors.insert(descriptor_type, descriptor.clone());
-                        return Some(descriptor);
+                        return Ok(Some(descriptor));
                     }
                     Some(status) if status.code == google_cloud_gax::error::rpc::Code::PermissionDenied => {
                         // Metric descriptor already exists, this is fine.
-                        tracing::warn!(
-                            "GCPMetricsExporter: PermissionDenied need access with role: `Monitoring Metric Writer` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`"
+                        let str_err = format!(
+                            "GCPMetricsExporter: PermissionDenied need access with role: `roles/monitoring.metricWriter` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`"
                         );
-                        return None;
+                        tracing::warn!("{}", str_err);
+                        return Err(OTelSdkError::InternalFailure(str_err));
                     }
                     _ => {
                         // Other errors are logged and we return None.
                     }
                 }
                 tracing::debug!("GCPMetricsExporter: Cant create metric descriptor: {:?}", err);
-                return None;
+                return Ok(None);
             }
         }
 
@@ -296,7 +297,7 @@ impl GCPMetricsExporter {
             let mut metric_descriptors = self.metric_descriptors.write().await;
             metric_descriptors.insert(descriptor_type, descriptor.clone());
         }
-        Some(descriptor)
+        Ok(Some(descriptor))
     }
 
     async fn exec_export(&self, metrics: &ResourceMetrics) -> Result<(), OTelSdkError> {
@@ -307,16 +308,6 @@ impl GCPMetricsExporter {
         // use std::io::Write;
         // let mut file = std::fs::File::create("metrics.txt").unwrap();
         // file.write_all(format!("{:#?}", metrics).as_bytes()).unwrap();
-        // let monitored_resource_data = match self.custom_monitored_resource_data.clone() {
-        //     Some(custom_monitored_resource_data) => Some(google_cloud_api::model::MonitoredResource {
-        //         r#type: custom_monitored_resource_data.r#type,
-        //         labels: custom_monitored_resource_data.labels,
-        //     }),
-        //     None => get_monitored_resource(metrics.resource()).map(|v| google_cloud_api::model::MonitoredResource {
-        //         r#type: v.r#type,
-        //         labels: v.labels,
-        //     }),
-        // };
         let monitored_resource_data = match self.custom_monitored_resource_data.clone() {
             Some(custom_monitored_resource_data) => Some(
                 google_cloud_api::model::MonitoredResource::new()
@@ -333,7 +324,7 @@ impl GCPMetricsExporter {
         let mut all_series = Vec::<google_cloud_monitoring_v3::model::TimeSeries>::new();
         for scope_metric in metrics.scope_metrics() {
             for metric in scope_metric.metrics() {
-                let descriptor = if let Some(descriptor) = self.get_metric_descriptor(metric).await {
+                let descriptor = if let Some(descriptor) = self.get_metric_descriptor(metric).await? {
                     descriptor
                 } else {
                     continue;
@@ -523,10 +514,11 @@ impl GCPMetricsExporter {
                 Err(err) => {
                     match err.status() {
                         Some(status) if status.code == google_cloud_gax::error::rpc::Code::PermissionDenied => {
-                            tracing::warn!(
-                                "GCPMetricsExporter: PermissionDenied need access with role: `Monitoring Metric Writer` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`"
+                            let str_err = format!(
+                                "GCPMetricsExporter: PermissionDenied need access with role: `roles/monitoring.metricWriter` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`"
                             );
-                            break;
+                            tracing::warn!("{}", str_err);
+                            return Err(OTelSdkError::InternalFailure(str_err));
                         }
                         _ => {}
                     }

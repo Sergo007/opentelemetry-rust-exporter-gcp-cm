@@ -1,0 +1,13 @@
+[coverage]
+all-features = true
+packages = ["opentelemetry_gcloud_monitoring_exporter"]
+exclude-files = [
+  # Ignore generated code.
+  "**/examples/**",
+]
+
+
+# ```
+# https://github.com/xd009642/tarpaulin
+# cargo tarpaulin --out Html
+# ```

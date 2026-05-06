@@ -2,7 +2,7 @@
 name    = "basic-metrics"
 version = "0.1.0"
 authors = ["Luca Palmieri <rust@lpalmieri.com>"]
-edition = "2018"
+edition = "2021"
 
 license = "MIT/Apache-2.0"
 
@@ -11,7 +11,7 @@ opentelemetry_gcloud_monitoring_exporter = { path = "../..", features = ["tokio"
 tokio                                    = { version = "1.0", features = ["full"] }
 opentelemetry                            = { version = "0.31", features = ["metrics"] }
 opentelemetry_sdk                        = { version = "0.31", features = ["experimental_metrics_periodicreader_with_async_runtime", "metrics", "rt-tokio"] }
-opentelemetry_resourcedetector_gcp_rust  = "0.20.0"
+opentelemetry_resourcedetector_gcp_rust  = "0.21.0"
 # json serializer/deserializer
 serde      = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

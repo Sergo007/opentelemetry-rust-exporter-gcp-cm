@@ -11,6 +11,7 @@ For resource detection see [opentelemetry-resourcedetector-gcp-rust](https://git
 Role: `Monitoring Metric Writer (roles/monitoring.metricWriter)` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`
 
 # Support OpenTelemetry SDK versions
+`opentelemetry_sdk:0.31      | opentelemetry_gcloud_monitoring_exporter:0.23  `\
 `opentelemetry_sdk:0.31      | opentelemetry_gcloud_monitoring_exporter:0.22  `\
 `opentelemetry_sdk:0.31      | opentelemetry_gcloud_monitoring_exporter:0.19.1  `\
 `opentelemetry_sdk:0.30      | opentelemetry_gcloud_monitoring_exporter:0.18  `\
@@ -38,7 +39,7 @@ opentelemetry_sdk = { version = "0.31", features = [
     "rt-tokio",
     "experimental_metrics_periodicreader_with_async_runtime",
 ] }
-opentelemetry_resourcedetector_gcp_rust = "0.20.0"
+opentelemetry_resourcedetector_gcp_rust = "0.21.0"
 ```
 
 # Usage

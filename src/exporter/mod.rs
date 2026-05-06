@@ -15,7 +15,7 @@ use opentelemetry_sdk::{
     },
 };
 
-use rand::Rng;
+use rand::RngExt;
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Formatter},
@@ -269,6 +269,7 @@ impl GCPMetricsExporter {
         {
             Ok(_) => {}
             Err(err) => {
+                // tracing::warn!("GCPMetricsExporter: Cant create metric descriptor: {:?}", err);
                 match err.status() {
                     Some(status) if status.code == google_cloud_gax::error::rpc::Code::AlreadyExists => {
                         // Metric descriptor already exists, this is fine.
@@ -281,6 +282,12 @@ impl GCPMetricsExporter {
                         let str_err = format!(
                             "GCPMetricsExporter: PermissionDenied need access with role: `roles/monitoring.metricWriter` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`"
                         );
+                        tracing::warn!("{}", str_err);
+                        return Err(OTelSdkError::InternalFailure(str_err));
+                    }
+                    Some(status) if status.code == google_cloud_gax::error::rpc::Code::Unauthenticated => {
+                        // Metric descriptor already exists, this is fine.
+                        let str_err = format!("GCPMetricsExporter: {}", status.message);
                         tracing::warn!("{}", str_err);
                         return Err(OTelSdkError::InternalFailure(str_err));
                     }
@@ -512,11 +519,18 @@ impl GCPMetricsExporter {
             match self.metric_service.create_time_series().with_request(req).send().await {
                 Ok(_) => {}
                 Err(err) => {
+                    // tracing::warn!("GCPMetricsExporter: Cant send time series: {:?}", err);
                     match err.status() {
                         Some(status) if status.code == google_cloud_gax::error::rpc::Code::PermissionDenied => {
                             let str_err = format!(
                                 "GCPMetricsExporter: PermissionDenied need access with role: `roles/monitoring.metricWriter` or permissions: `monitoring.metricDescriptors.create`, `monitoring.timeSeries.create`"
                             );
+                            tracing::warn!("{}", str_err);
+                            return Err(OTelSdkError::InternalFailure(str_err));
+                        }
+                        Some(status) if status.code == google_cloud_gax::error::rpc::Code::Unauthenticated => {
+                            // Metric descriptor already exists, this is fine.
+                            let str_err = format!("GCPMetricsExporter: {}", status.message);
                             tracing::warn!("{}", str_err);
                             return Err(OTelSdkError::InternalFailure(str_err));
                         }
